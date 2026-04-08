@@ -1,35 +1,47 @@
-name: Doctor Scraper
+name: Doctor Scraper Persistence
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Ще се пуска всяка вечер, докато спиш като къпано бебе
-  workflow_dispatch: # Бутонче за ръчно пускане, ако си превъзбуден
+    - cron: '0 0 * * *' # Пуска се автоматично веднъж на 24 часа
+  workflow_dispatch: # Позволява ти да го пуснеш ръчно, когато си поискаш
 
 jobs:
-  build:
+  scrape_job:
     runs-on: ubuntu-latest
+    
+    # КРИТИЧНО: Трябва ни разрешение да пишем обратно в репозиторито
     permissions:
-      contents: write # Трябва ни, за да запишем CSV-то обратно в репото
+      contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
-      - name: Setup Python
+      - name: Setup Python environment
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install requests beautifulsoup4
 
-      - name: Run Scraper
+      - name: Execute Scraper
         run: python scraper.py
 
-      - name: Commit and Push
+      - name: Commit and Push results
         run: |
+          # Конфигуриране на Git за автоматичния бот
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add ultimate_doctors_data.csv
-          git commit -m "Автоматично обновяване на лекарчовци - $(date)" || echo "Няма промени"
+          
+          # Добавяме CSV файла и файла със състоянието (прогреса)
+          git add ultimate_doctors_data.csv state.json
+          
+          # Комитваме само ако има промени, за да не гърми workflow-а
+          git commit -m "Автоматично обновяване на данни и прогрес - $(date)" || echo "Няма нови данни за запис"
+          
+          # Пушваме обратно в главния бранч
           git push
