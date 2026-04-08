@@ -1,0 +1,35 @@
+name: Doctor Scraper
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Ще се пуска всяка вечер, докато спиш като къпано бебе
+  workflow_dispatch: # Бутонче за ръчно пускане, ако си превъзбуден
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Трябва ни, за да запишем CSV-то обратно в репото
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Scraper
+        run: python scraper.py
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add ultimate_doctors_data.csv
+          git commit -m "Автоматично обновяване на лекарчовци - $(date)" || echo "Няма промени"
+          git push
