@@ -2,14 +2,13 @@ name: Doctor Scraper Persistence
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Пуска се автоматично веднъж на 24 часа
-  workflow_dispatch: # Позволява ти да го пуснеш ръчно, когато си поискаш
+    - cron: '0 */6 * * *' # Пуска се на всеки 6 часа, бе палавник!
+  workflow_dispatch: 
 
 jobs:
   scrape_job:
     runs-on: ubuntu-latest
     
-    # КРИТИЧНО: Трябва ни разрешение да пишем обратно в репозиторито
     permissions:
       contents: write
 
@@ -33,15 +32,11 @@ jobs:
 
       - name: Commit and Push results
         run: |
-          # Конфигуриране на Git за автоматичния бот
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          # Добавяме CSV файла и файла със състоянието (прогреса)
           git add ultimate_doctors_data.csv state.json
           
-          # Комитваме само ако има промени, за да не гърми workflow-а
           git commit -m "Автоматично обновяване на данни и прогрес - $(date)" || echo "Няма нови данни за запис"
           
-          # Пушваме обратно в главния бранч
           git push
