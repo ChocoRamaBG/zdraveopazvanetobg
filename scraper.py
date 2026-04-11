@@ -55,7 +55,13 @@ def scrape_ultimate_doctors():
     print("Йо шефе, почваме голямото източване... ¡Vámonos!")
     
     current_page = load_state()
-    print(f"Продължаваме от страница: {current_page}. Евала, льоло!")
+    
+    # ФИКС ЗА БЕЗКРАЙНИЯ ЦИКЪЛ: Ако сме приключили, просто си почиваме
+    if current_page == "DONE":
+        print("Мамка му човече, вече сме източили всичко! Няма какво да стържем. Мисията е приключена.")
+        return
+
+    print(f"Продължаваме от страница: {current_page}. Евала, льольо!")
 
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
@@ -66,7 +72,7 @@ def scrape_ultimate_doctors():
         if not file_exists:
             writer.writerow(['Име', 'Адрес', 'Телефон', 'Имейл', 'Отрасъл', 'Дейност', 'Ключови думи', 'Latitude', 'Longitude', 'Описание', 'Линк'])
         
-        page = current_page
+        page = int(current_page)
         while True:
             if (time.time() - start_time) > TIME_LIMIT:
                 print(f"Мамка му човече, времето изтича! Спираме на страница {page}.")
@@ -88,7 +94,7 @@ def scrape_ultimate_doctors():
                 
                 if not firms:
                     print("Свършиха палавникчовците! Мисията е успешна.")
-                    save_state(1) 
+                    save_state("DONE") # <--- ФИКСА: Вече не връщаме на 1, а пишем DONE
                     break
                 
                 for firm in firms:
@@ -106,6 +112,11 @@ def scrape_ultimate_doctors():
                             
                             address = get_partition_value(inner_soup, 'Адрес')
                             phone = get_partition_value(inner_soup, 'Телефон')
+                            
+                            # ФИКС ЗА ТЕЛЕФОНЧОВЦИТЕ: Екселчето ще го чете като стринг и няма да яде нулите
+                            if phone:
+                                phone = f'="{phone}"'
+
                             email = get_partition_value(inner_soup, 'E-mail')
                             industry = get_partition_value(inner_soup, 'Отрасъл')
                             activity = get_partition_value(inner_soup, 'Дейност')
